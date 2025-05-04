@@ -1,0 +1,16 @@
+[requires]
+boost/1.85.0
+openssl/1.0.2u
+zlib/1.3.1
+bzip2/1.0.8
+sqlite_orm/1.8.2
+
+[options]
+*:shared=False
+
+[generators]
+CMakeDeps
+CMakeToolchain
+
+[layout]
+cmake_layout

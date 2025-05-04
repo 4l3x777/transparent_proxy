@@ -1,68 +1,16 @@
-# WFP Transparent Proxy
+#include <iostream>
+#include <algorithm>
+#include <string>
+#include <cctype>
+#include <mutex>
+#include <chrono>
+#include <Windows.h>
 
-- "прозрачное" проксирование TLS трафика
-- использован модифицированный WFP драйвер (Windivert) последней версии
+#include <httpengine/HttpFilteringEngineControl.hpp>
+#include <sqlite_orm/sqlite_orm.h>
+#include <boost/algorithm/string.hpp>
+#include <logger.h>
 
-## Windivert driver
-
-- windivert-driver - проект содержит WFP драйвер, который необоходимо собрать для проекта
-
-## deps
-
-- проекты: gq, gumpo-parser, http-parser заимствованны из проекта HttpFilteringEngine для анализа TLS
-- проекты: logger, windivert-lib для работы с "прозрачным" прокси
-
-## Browser/Application name
-
-- в example.cpp по необходимости добавьте имя процесса
-
-```C++
-    http_transaction::binaries_check = {
-        "browser",
-        "firefox",
-        "msedge",
-        "opera",
-        "brave",
-        "vivaldi",
-        "iexplore"
-    };
-```
-
-## CA certs
-
-- файл [ca_certs](example/cacert-2025-02-25.pem) содержит корневые сертификаты
-- собственный корневой сертификат сервера генерируется в рантайме и добавляется в пул корневых сертификатов
-
-    ```C++
-    m_store.reset(new mitm::secure::WindowsInMemoryCertificateStore("CA", "Eset Smart-Security Personal Root Certificate", "ESET, spol. s r.o."));
-    ```
-
-## API
-
-- ```C++ te::httpengine::HttpFilteringEngineControl``` - задает обработчики, путь к ca_certs файлу, количество потоков-обработчиков
-
-    ```C++
-        auto control = te::httpengine::HttpFilteringEngineControl(
-            http_transaction::onFirewallBinaryCheck,
-            pem_path,
-            1111,
-            2222,
-            std::thread::hardware_concurrency() / 2,
-            http_transaction::OnHttpMessageBegin,
-            http_transaction::OnHttpMessageEnd,
-            http_transaction::OnEngineMessage,
-            http_transaction::OnEngineMessage,
-            http_transaction::OnEngineMessage
-        );
-    ```
-
-- обработчик ```C++ http_transaction::OnHttpMessageEnd``` сохраняет результат транзакции в sqlite базу
-
-### Example
-
-![alt text](/img/transparent_proxy.gif)
-
-```C++
 namespace http_transaction {
 
     std::vector<std::string> binaries_check;    // array of binaries for check
@@ -141,7 +89,7 @@ static void OnHttpMessageBegin(
     const uint32_t requestHeadersLength,
     const char* requestBody,
     const uint32_t requestBodyLength, 
-    const char* responseHeaders, 
+	const char* responseHeaders, 
     const uint32_t responseHeadersLength,
     const char* responseBody, 
     const uint32_t responseBodyLength,
@@ -165,7 +113,7 @@ static void OnHttpMessageEnd(
     const uint32_t requestHeadersLength,
     const char* requestBody,
     const uint32_t requestBodyLength, 
-    const char* responseHeaders, 
+	const char* responseHeaders, 
     const uint32_t responseHeadersLength,
     const char* responseBody, 
     const uint32_t responseBodyLength,
@@ -236,7 +184,6 @@ bool is_mandatory_high_process()
 }
 
 int main(int argc, char* argv[]) {
-    
     // init logger
     logger::InitBoostLogFilter();
 
@@ -283,9 +230,5 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-```
 
-## Thanks
 
-- проект [HttpFilteringEngine](https://github.com/TechnikEmpire/HttpFilteringEngine)
-- проект [WinDivert](https://github.com/basil00/WinDivert)
